@@ -1,37 +1,34 @@
 const express = require('express');
 const path = require('path');
 const { ApolloServer } = require('apollo-server-express')
-const { expressMiddleware } = require('@apollo/server/express4')
+// const { expressMiddleware } = require('@apollo/server/express4')
 const typeDefs = require('./schemas/typeDefs')
 const resolvers = require('./schemas/resolvers')
 const { authMiddleware } = require('./utils/auth');
-const apolloServer = new ApolloServer({ typeDefs, resolvers, context: authMiddleware })
-
-
-
-const db = require('./config/connection');
-// const routes = require('./routes');
-
+const connection = require('./config/connection');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
+const apolloServer = new ApolloServer({ typeDefs, resolvers, context: authMiddleware })
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// if we're in production, serve client/build as static assets
+//serve static assets
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
 }
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/'))
+})
 
-// app.use(routes);
-
-
+// Apollo Server with GraphQL Schema
 const startApolloServer = async (typeDefs, resolvers) => {
   await apolloServer.start()
   apolloServer.applyMiddleware({app})
-  db.once('open', () => {
+  connection.once('open', () => {
     app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`)
       console.log(`Use graphql at http://localhost:${PORT}${apolloServer.graphqlPath}`)
     })
   })
@@ -39,10 +36,3 @@ const startApolloServer = async (typeDefs, resolvers) => {
 
 startApolloServer(typeDefs, resolvers)
 
-// db.once('open', async () => {
-//   await apolloServer.start()
-//   app.use(expressMiddleware(apolloServer))
-//   console.log(`Playground at http://localhost:${PORT}/graphql`)
-
-//   app.listen(PORT, () => console.log(`🌍 Now listening on localhost:${PORT}`));
-// });
