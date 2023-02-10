@@ -25,6 +25,7 @@ const resolvers = {
         addUser: async (parent, args, context, info) => {
             // const user = await (await User.create(args)).populate('books') ??
             const user = await User.create(args)
+            console.log(user)
             const token = signToken(user)
             return { token, user }
         },
@@ -38,7 +39,6 @@ const resolvers = {
                 return user
             }
         },
-
         removeBook: async (parent, args, context, info) => {
             if (context.user) {
                 const user = await User.findByIdAndUpdate(
